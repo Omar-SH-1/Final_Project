@@ -2,7 +2,7 @@
 #include <fstream>
 #include <cstring>
 
-const int SIZE = 195;           // Количество стран
+const int SIZE = 195;           // Количество стра
 const int MAX_NAME_LENGTH = 100; // Максимальная длина названия страны
 
 void saveMatrixToFile(int connections[SIZE][SIZE], const std::string& filename) {
