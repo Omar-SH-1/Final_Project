@@ -53,7 +53,7 @@ int main() {
     }
 
     // Вывод матрицы связей
-    std::cout << "\nМтрица связей:\n";
+    std::cout << "\nМатрица связей:\n";
     for (int i = 0; i < SIZE; ++i) {
         for (int j = 0; j < SIZE; ++j) {
             std::cout << connections[i][j] << " ";
