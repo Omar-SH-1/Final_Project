@@ -1,91 +1,111 @@
 #include <iostream>
 #include <fstream>
-#include <cstring>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <set>
+#include <sstream> // Добавлено для использования stringstream
 
-const int SIZE = 195;           // Количество стра
-const int MAX_NAME_LENGTH = 100; // Максимальная длина названия страны
+using namespace std;
 
-void saveMatrixToFile(int connections[SIZE][SIZE], const std::string& filename) {
-    std::ofstream file(filename);
-    if (!file) {
-        std::cerr << "Не удалось открыть файл для сохранения матрицы!" << std::endl;
-        return;
+// Загрузка матрицы смежности из файла
+vector<vector<int>> loadMatrix(const string& filePath) {
+    ifstream file(filePath);
+    vector<vector<int>> matrix;
+    string line;
+
+    if (!file.is_open()) {
+        cerr << "Ошибка: не удалось открыть файл." << endl;
+        exit(1);
     }
 
-    for (int i = 0; i < SIZE; ++i) {
-        for (int j = 0; j < SIZE; ++j) {
-            file << connections[i][j] << " ";
+    while (getline(file, line)) {
+        vector<int> row;
+        int value;
+        stringstream ss(line);
+        while (ss >> value) {
+            row.push_back(value);
         }
-        file << "\n";
+        matrix.push_back(row);
     }
 
-    file.close();
-    std::cout << "Матрица успешно сохранена в файл " << filename << "\n";
+    return matrix;
 }
 
-void loadMatrixFromFile(int connections[SIZE][SIZE], const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file) {
-        std::cerr << "Файл матрицы не найден. Начинаем с пустой матрицы.\n";
-        return;
-    }
+// BFS для нахождения связных компонент
+void bfs(int start, const vector<vector<int>>& graph, vector<bool>& visited, set<int>& component) {
+    queue<int> q;
+    q.push(start);
+    visited[start] = true;
 
-    for (int i = 0; i < SIZE; ++i) {
-        for (int j = 0; j < SIZE; ++j) {
-            file >> connections[i][j];
+    while (!q.empty()) {
+        int node = q.front();
+        q.pop();
+        component.insert(node);
+
+        for (int i = 0; i < graph[node].size(); ++i) {
+            if (graph[node][i] == 1 && !visited[i]) {
+                visited[i] = true;
+                q.push(i);
+            }
+        }
+    }
+}
+
+// Нахождение всех связных компонент
+vector<set<int>> findConnectedComponents(const vector<vector<int>>& graph) {
+    vector<bool> visited(graph.size(), false);
+    vector<set<int>> components;
+
+    for (int i = 0; i < graph.size(); ++i) {
+        if (!visited[i]) {
+            set<int> component;
+            bfs(i, graph, visited, component);
+            components.push_back(component);
         }
     }
 
-    file.close();
-    std::cout << "Матрица успешно загружена из файла " << filename << "\n";
+    return components;
 }
 
 int main() {
-    int connections[SIZE][SIZE] = {0};   // Матрица связей
-    char countries[SIZE][MAX_NAME_LENGTH]; // Названия стран
+    // Путь к файлу
+    string filePath = "connections_matrix.txt";
 
-    // Считывание списка стран
-    std::ifstream countriesFile("195_countries.txt");
-    if (!countriesFile) {
-        std::cerr << "Не удалось открыть файл 195_countries.txt\n";
-        return 1;
-    }
+    // Загрузка матрицы смежности
+    vector<vector<int>> graph = loadMatrix(filePath);
 
-    for (int i = 0; i < SIZE; ++i) {
-        countriesFile.getline(countries[i], MAX_NAME_LENGTH);
-    }
-    countriesFile.close();
+    // Карта соответствия стран и континентов
+    unordered_map<int, string> continentMap = {
+            {0, "Europe"}, {1, "Asia"}, {2, "Africa"}, {3, "North America"},
+            {4, "South America"}, {5, "Australia"}, {6, "Antarctica"}
+    };
 
-    // Загрузка матрицы из файла
-    loadMatrixFromFile(connections, "connections_matrix.txt");
-
-    // Вручную задаем связи
+    // Ввод двух стран для удаления связи
     int country1, country2;
-    char response;
+    cout << "Введите номера двух стран (0-индексированных), между которыми нужно оборвать связь: ";
+    cin >> country1 >> country2;
 
-    while (true) {
-        std::cout << "\nВведите номера двух стран (от 0 до " << SIZE - 1 << ") для создания связи:\n";
-        for (int i = 0; i < SIZE; ++i) {
-            std::cout << i << ": " << countries[i] << std::endl;
+    // Удаление связи
+    graph[country1][country2] = 0;
+    graph[country2][country1] = 0;
+
+    // Нахождение связных компонент
+    vector<set<int>> components = findConnectedComponents(graph);
+
+    // Вывод результирующих континентов
+    cout << "Связанные континенты после разрыва связи:" << endl;
+    for (const auto& component : components) {
+        set<string> connectedContinents;
+        for (int country : component) {
+            connectedContinents.insert(continentMap[country]);
         }
-
-        std::cin >> country1 >> country2;
-
-        if (country1 < 0 || country1 >= SIZE || country2 < 0 || country2 >= SIZE) {
-            std::cout << "Неверный номер страны. Попробуйте снова.\n";
-            continue;
+        cout << "{ ";
+        for (const auto& continent : connectedContinents) {
+            cout << continent << " ";
         }
-
-        connections[country1][country2] = 1;
-        connections[country2][country1] = 1; // Симметричная связь
-
-        std::cout << "Добавить еще связь? (y/n): ";
-        std::cin >> response;
-        if (response == 'n' || response == 'N') break;
+        cout << "}" << endl;
     }
-
-    // Сохранение матрицы в файл
-    saveMatrixToFile(connections, "connections_matrix.txt");
 
     return 0;
 }
