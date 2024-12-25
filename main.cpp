@@ -1,111 +1,147 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 #include <queue>
 #include <unordered_map>
-#include <set>
-#include <sstream> // Добавлено для использования stringstream
+#include <unordered_set>
+#include <algorithm>
 
-using namespace std;
-
-// Загрузка матрицы смежности из файла
-vector<vector<int>> loadMatrix(const string& filePath) {
-    ifstream file(filePath);
-    vector<vector<int>> matrix;
-    string line;
-
+// Функция для загрузки списка стран
+std::vector<std::string> loadCountries(const std::string& filename) {
+    std::ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Ошибка: не удалось открыть файл." << endl;
+        std::cerr << "Не удалось открыть файл: " << filename << std::endl;
         exit(1);
     }
 
-    while (getline(file, line)) {
-        vector<int> row;
-        int value;
-        stringstream ss(line);
-        while (ss >> value) {
-            row.push_back(value);
+    std::vector<std::string> countries;
+    std::string country;
+    while (std::getline(file, country)) {
+        countries.push_back(country);
+    }
+
+    file.close();
+    return countries;
+}
+
+// Функция для загрузки матрицы из файла
+std::vector<std::vector<int>> loadMatrix(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Не удалось открыть файл: " << filename << std::endl;
+        exit(1);
+    }
+
+    std::vector<std::vector<int>> matrix;
+    std::string line;
+    while (std::getline(file, line)) {
+        std::vector<int> row;
+        size_t start = 0, end;
+        while ((end = line.find(',', start)) != std::string::npos) {
+            row.push_back(std::stoi(line.substr(start, end - start)));
+            start = end + 1;
         }
+        row.push_back(std::stoi(line.substr(start)));
         matrix.push_back(row);
     }
 
+    file.close();
     return matrix;
 }
 
-// BFS для нахождения связных компонент
-void bfs(int start, const vector<vector<int>>& graph, vector<bool>& visited, set<int>& component) {
-    queue<int> q;
-    q.push(start);
-    visited[start] = true;
+// Удаление связи между двумя странами
+void removeConnection(std::vector<std::vector<int>>& matrix, int country1Idx, int country2Idx) {
+    matrix[country1Idx][country2Idx] = 0;
+    matrix[country2Idx][country1Idx] = 0;
+}
+
+// BFS для проверки доступности
+bool bfs(const std::vector<std::vector<int>>& matrix, int startIdx, const std::unordered_set<int>& targetIdxs) {
+    std::queue<int> q;
+    std::vector<bool> visited(matrix.size(), false);
+
+    q.push(startIdx);
+    visited[startIdx] = true;
 
     while (!q.empty()) {
-        int node = q.front();
+        int current = q.front();
         q.pop();
-        component.insert(node);
 
-        for (int i = 0; i < graph[node].size(); ++i) {
-            if (graph[node][i] == 1 && !visited[i]) {
+        if (targetIdxs.count(current)) {
+            return true; // Найдена связь с одной из целевых стран
+        }
+
+        for (size_t i = 0; i < matrix.size(); ++i) {
+            if (matrix[current][i] == 1 && !visited[i]) {
                 visited[i] = true;
                 q.push(i);
             }
         }
     }
+    return false;
 }
 
-// Нахождение всех связных компонент
-vector<set<int>> findConnectedComponents(const vector<vector<int>>& graph) {
-    vector<bool> visited(graph.size(), false);
-    vector<set<int>> components;
+// Проверка доступности до континентов
+void checkConnectionsToContinents(const std::vector<std::vector<int>>& matrix, int countryIdx,
+                                  const std::unordered_map<std::string, std::vector<int>>& continents,
+                                  const std::vector<std::string>& countries) {
+    for (const auto& [continent, countryIdxs] : continents) {
+        std::unordered_set<int> targetIdxs(countryIdxs.begin(), countryIdxs.end());
 
-    for (int i = 0; i < graph.size(); ++i) {
-        if (!visited[i]) {
-            set<int> component;
-            bfs(i, graph, visited, component);
-            components.push_back(component);
+        bool connected = bfs(matrix, countryIdx, targetIdxs);
+
+        if (connected) {
+            std::cout << "Страна " << countries[countryIdx] << " имеет доступ к континенту " << continent << std::endl;
+        } else {
+            std::cout << "Страна " << countries[countryIdx] << " НЕ имеет доступа к континенту " << continent << std::endl;
         }
     }
-
-    return components;
 }
 
 int main() {
-    // Путь к файлу
-    string filePath = "connections_matrix.txt";
+    // Загрузка списка стран
+    std::vector<std::string> countries = loadCountries("195_countries.txt");
 
-    // Загрузка матрицы смежности
-    vector<vector<int>> graph = loadMatrix(filePath);
+    // Загрузка матрицы связей
+    std::vector<std::vector<int>> matrix = loadMatrix("connections_matrix.txt");
 
-    // Карта соответствия стран и континентов
-    unordered_map<int, string> continentMap = {
-            {0, "Europe"}, {1, "Asia"}, {2, "Africa"}, {3, "North America"},
-            {4, "South America"}, {5, "Australia"}, {6, "Antarctica"}
+    // Задание континентов
+    std::unordered_map<std::string, std::vector<int>> continents = {
+            {"Africa", {2, 56, 78}},  // Индексы стран в Африке
+            {"Asia", {34, 70, 102}},  // Индексы стран в Азии
+            {"Europe", {10, 50, 150}}, // Индексы стран в Европе
+            {"North America", {25, 30, 100}}, // Индексы стран в Северной Америке
+            {"South America", {20, 60, 110}}, // Индексы стран в Южной Америке
+            {"Australia", {8}} // Индекс Австралии
     };
 
-    // Ввод двух стран для удаления связи
-    int country1, country2;
-    cout << "Введите номера двух стран (0-индексированных), между которыми нужно оборвать связь: ";
-    cin >> country1 >> country2;
+    // Ввод двух стран, связь между которыми оборвалась
+    std::string country1, country2;
+    std::cout << "Введите две страны, между которыми оборвалась связь: ";
+    std::cin >> country1 >> country2;
 
-    // Удаление связи
-    graph[country1][country2] = 0;
-    graph[country2][country1] = 0;
+    // Получение индексов стран
+    auto it1 = std::find(countries.begin(), countries.end(), country1);
+    auto it2 = std::find(countries.begin(), countries.end(), country2);
 
-    // Нахождение связных компонент
-    vector<set<int>> components = findConnectedComponents(graph);
-
-    // Вывод результирующих континентов
-    cout << "Связанные континенты после разрыва связи:" << endl;
-    for (const auto& component : components) {
-        set<string> connectedContinents;
-        for (int country : component) {
-            connectedContinents.insert(continentMap[country]);
-        }
-        cout << "{ ";
-        for (const auto& continent : connectedContinents) {
-            cout << continent << " ";
-        }
-        cout << "}" << endl;
+    if (it1 == countries.end() || it2 == countries.end()) {
+        std::cerr << "Одна из введенных стран не найдена в списке!" << std::endl;
+        return 1;
     }
+
+    int country1Idx = std::distance(countries.begin(), it1);
+    int country2Idx = std::distance(countries.begin(), it2);
+
+    // Удаление связи из матрицы
+    removeConnection(matrix, country1Idx, country2Idx);
+
+    // Проверка доступности
+    std::cout << "Проверка доступности для " << country1 << ":\n";
+    checkConnectionsToContinents(matrix, country1Idx, continents, countries);
+
+    std::cout << "\nПроверка доступности для " << country2 << ":\n";
+    checkConnectionsToContinents(matrix, country2Idx, continents, countries);
 
     return 0;
 }
