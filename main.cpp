@@ -160,30 +160,35 @@ int main() {
 
     // Ввод двух стран, связь между которыми оборвалась
     std::string country1, country2;
-    std::cout << "Введите две страны, между которыми оборвалась связь: ";
-    std::cin >> country1 >> country2;
+    bool validInput = false;
 
-    // Проверка существования стран в списке
-    auto it1 = std::find(countries.begin(), countries.end(), country1);
-    auto it2 = std::find(countries.begin(), countries.end(), country2);
+    while (!validInput) {
+        std::cout << "Введите две страны, между которыми оборвалась связь: ";
+        std::cin >> country1 >> country2;
 
-    if (it1 == countries.end() || it2 == countries.end()) {
-        std::cerr << "Ошибка: Одна или обе введенные страны не найдены в списке!" << std::endl;
-        return 1;
+        // Проверка существования стран в списке
+        auto it1 = std::find(countries.begin(), countries.end(), country1);
+        auto it2 = std::find(countries.begin(), countries.end(), country2);
+
+        if (it1 == countries.end() || it2 == countries.end()) {
+            std::cerr << "Ошибка: Одна или обе введенные страны не найдены в списке! Попробуйте ещё раз.\n";
+        } else {
+            validInput = true;
+
+            int country1Idx = std::distance(countries.begin(), it1);
+            int country2Idx = std::distance(countries.begin(), it2);
+
+            // Удаление связи из матрицы
+            removeConnection(matrix, country1Idx, country2Idx);
+
+            // Проверка доступности и построение маршрутов для обеих стран
+            std::cout << "Проверка доступности и маршрутов для " << country1 << ":\n";
+            checkConnectionsToContinents(matrix, country1Idx, continents, countries);
+
+            std::cout << "\nПроверка доступности и маршрутов для " << country2 << ":\n";
+            checkConnectionsToContinents(matrix, country2Idx, continents, countries);
+        }
     }
-
-    int country1Idx = std::distance(countries.begin(), it1);
-    int country2Idx = std::distance(countries.begin(), it2);
-
-    // Удаление связи из матрицы
-    removeConnection(matrix, country1Idx, country2Idx);
-
-    // Проверка доступности и построение маршрутов для обеих стран
-    std::cout << "Проверка доступности и маршрутов для " << country1 << ":\n";
-    checkConnectionsToContinents(matrix, country1Idx, continents, countries);
-
-    std::cout << "\nПроверка доступности и маршрутов для " << country2 << ":\n";
-    checkConnectionsToContinents(matrix, country2Idx, continents, countries);
 
     return 0;
 }
