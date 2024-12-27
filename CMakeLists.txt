@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.29)
-project(Final_Project)
+project(Network_Connection)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Final_Project main.cpp Final.h Final.cpp)
+add_executable(Network_Connection main.cpp connection.h connection.cpp)
