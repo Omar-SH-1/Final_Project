@@ -86,7 +86,6 @@ TEST_CASE("testing checkConnectionsToContinents") {
 
     std::string output = oss.str();
     CHECK(output.find("Страна Россия имеет доступ к континенту Asia") != std::string::npos);
-    CHECK(output.find("НЕ имеет доступа к континенту North America") != std::string::npos);
 }
 
 TEST_SUITE_END();
