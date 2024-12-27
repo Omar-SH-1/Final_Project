@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.29)
 project(Final_Project)
-
 set(CMAKE_CXX_STANDARD 20)
-
-add_executable(Final_Project main.cpp Final.h Final.cpp)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+add_library(FinalLibrary SHARED Final.cpp)
+add_executable(Final_Project main.cpp)
+target_link_libraries(Final_Project PRIVATE FinalLibrary)
