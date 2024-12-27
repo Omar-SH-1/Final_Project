@@ -1,5 +1,5 @@
-#ifndef FINAL_H
-#define FINAL_H
+#ifndef CONNECTION_H
+#define CONNECTION_H
 
 #include <iostream>
 #include <fstream>
@@ -31,4 +31,4 @@ void checkConnectionsToContinents(const std::vector<std::vector<int>>& matrix, i
                                   const std::unordered_map<std::string, std::vector<int>>& continents,
                                   const std::vector<std::string>& countries);
 
-#endif // FINAL_H
+#endif // CONNECTION_H
