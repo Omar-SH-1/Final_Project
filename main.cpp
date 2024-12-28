@@ -26,8 +26,11 @@ int main() {
     bool validInput = false;
 
     while (!validInput) {
-        std::cout << "Введите две страны, между которыми оборвалась связь: ";
-        std::cin >> country1 >> country2;
+        std::cout << "Введите первую страну: ";
+        std::getline(std::cin, country1);
+
+        std::cout << "Введите вторую страну: ";
+        std::getline(std::cin, country2);
 
         auto it1 = std::find(countries.begin(), countries.end(), country1);
         auto it2 = std::find(countries.begin(), countries.end(), country2);
